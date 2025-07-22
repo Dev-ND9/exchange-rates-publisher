@@ -1,25 +1,48 @@
-name: Update Exchange Rates
+#!/bin/bash
+set -e
 
-on:
-  schedule:
-    - cron: '0 7 20 * *'   # runs at 07:00 UTC on the 20th of each month (adjust as needed)
-  workflow_dispatch:       # allows manual triggering
+# Calculate next and current month (no leading zero)
+NEXT_YEAR=$(date -u -d "$(date +%Y-%m-15) +1 month" +"%Y")
+NEXT_MONTH=$(date -u -d "$(date +%Y-%m-15) +1 month" +"%-m")
 
-permissions:
-  contents: write          # important to allow pushing commits
+CURRENT_YEAR=$(date -u +"%Y")
+CURRENT_MONTH=$(date -u +"%-m")
 
-jobs:
-  update-exchange-rates:
-    runs-on: ubuntu-latest
+OUTPUT_FILE="LastFX.xml"
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-        with:
-          persist-credentials: true  # crucial to allow pushing changes
+download_file() {
+  local year=$1
+  local month=$2
+  local url="https://www.trade-tariff.service.gov.uk/api/v2/exchange_rates/files/monthly_xml_${year}-${month}.xml"
+  echo "Attempting to download: $url"
+  curl -s -f -o "$OUTPUT_FILE" "$url"
+}
 
-      - name: Set execute permission for script
-        run: chmod +x ./download_and_publish.sh
+if download_file "$NEXT_YEAR" "$NEXT_MONTH"; then
+  echo "Downloaded next month (${NEXT_YEAR}-${NEXT_MONTH}) exchange rates."
+  FILE_MONTH="${NEXT_YEAR}-${NEXT_MONTH}"
+elif download_file "$CURRENT_YEAR" "$CURRENT_MONTH"; then
+  echo "Downloaded current month (${CURRENT_YEAR}-${CURRENT_MONTH}) exchange rates."
+  FILE_MONTH="${CURRENT_YEAR}-${CURRENT_MONTH}"
+else
+  echo "ERROR: Both next and current month files not available."
+  exit 1
+fi
 
-      - name: Run download and publish script
-        run: ./download_and_publish.sh
+# Force commit if file not tracked yet
+if git ls-files --error-unmatch "$OUTPUT_FILE" > /dev/null 2>&1; then
+  if git diff --quiet "$OUTPUT_FILE"; then
+    echo "No changes detected in $OUTPUT_FILE; no commit needed."
+    exit 0
+  fi
+else
+  echo "$OUTPUT_FILE not tracked yet, will commit."
+fi
+
+git config user.name "exchange-rates-bot"
+git config user.email "bot@example.com"
+git add "$OUTPUT_FILE"
+git commit -m "Update LastFX.xml for $FILE_MONTH"
+git push
+
+echo "Committed and pushed updated $OUTPUT_FILE for $FILE_MONTH."
