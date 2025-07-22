@@ -29,9 +29,14 @@ else
   exit 1
 fi
 
-if git diff --quiet "$OUTPUT_FILE"; then
-  echo "No changes detected in $OUTPUT_FILE; no commit needed."
-  exit 0
+# Force commit if file not tracked yet
+if git ls-files --error-unmatch "$OUTPUT_FILE" > /dev/null 2>&1; then
+  if git diff --quiet "$OUTPUT_FILE"; then
+    echo "No changes detected in $OUTPUT_FILE; no commit needed."
+    exit 0
+  fi
+else
+  echo "$OUTPUT_FILE not tracked yet, will commit."
 fi
 
 git config user.name "exchange-rates-bot"
