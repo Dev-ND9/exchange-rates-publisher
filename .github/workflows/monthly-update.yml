@@ -2,7 +2,7 @@ name: Monthly Exchange Rate Update
 
 on:
   schedule:
-    - cron: '30 6 15-21 * 5'  # Fridays between 15th–21st, 06:30 UTC
+    - cron: '30 6 15-21 * 5'  # Fridays between 15-21st at 06:30 UTC
   workflow_dispatch:
 
 jobs:
@@ -11,5 +11,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Make script executable
+        run: chmod +x download_and_publish.sh
+
       - name: Run download script
-        run: bash download_and_publish.sh
+        run: |
+          echo "Running download_and_publish.sh"
+          ./download_and_publish.sh
