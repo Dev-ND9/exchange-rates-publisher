@@ -13,7 +13,7 @@ OUTPUT_FILE="LastFX.xml"
 download_file() {
   local year=$1
   local month=$2
-  local url="https://www.trade-tariff.service.gov.uk/api/exchange_rates/files/monthly_xml_${year}-${month}.xml"
+  local url="https://www.trade-tariff.service.gov.uk/uk/api/exchange_rates/files/monthly_xml_${year}-${month}.xml"
   echo "Attempting to download: $url"
   curl -s -f -o "$OUTPUT_FILE" "$url"
 }
