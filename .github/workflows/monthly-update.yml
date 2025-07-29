@@ -20,7 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-        - name: Make script executable
+      - name: Make script executable
         run: chmod +x ./download_and_publish.sh
 
       - name: Run download_and_publish.sh
